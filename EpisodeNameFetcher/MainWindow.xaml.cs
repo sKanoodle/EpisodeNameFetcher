@@ -59,6 +59,18 @@ namespace EpisodeNameFetcher
             }
         }
 
+        private ParsingMode _Mode;
+        public ParsingMode Mode
+        {
+            get => _Mode;
+            set
+            {
+                if (_Mode == value) return;
+                _Mode = value;
+                OnPropertyChanged(nameof(Mode));
+            }
+        }
+
         private ICommand _Convert;
 
         public ICommand Convert
@@ -88,9 +100,11 @@ namespace EpisodeNameFetcher
         {
             get
             {
-                if (String.IsNullOrWhiteSpace(SeriesShortHandle))
-                    return false;
                 if (String.IsNullOrWhiteSpace(Input))
+                    return false;
+                if (Mode == ParsingMode.Debug)
+                    return true;
+                if (String.IsNullOrWhiteSpace(SeriesShortHandle))
                     return false;
                 return true;
             }
@@ -98,67 +112,39 @@ namespace EpisodeNameFetcher
 
         private void Parse()
         {
-            string result = CleanInput(Input);
-            result = MakeDictionary(result);
-            result = ToTwoDigitEpisodeNumber(result);
-            result = DeleteInvalidFilenameCharacters(result);
-            result = InsertSeasonNumbers(result);
-            Output = result;
-        }
-
-        private string CleanInput(string input)
-        {
-            string pattern = @"\r\n(?!\d|Season)";
-            string replacementPattern = String.Empty;
-            input = Regex.Replace(input, pattern, replacementPattern);
-
-            pattern = @"^Season.*$";
-            return Regex.Replace(input, pattern, replacementPattern, RegexOptions.Multiline);
-        }
-
-        private string MakeDictionary(string input)
-        {
-            string pattern = @"^\d+\t(\d+)\t""([^""]+).*$";
-            string replacementPattern = $@"[""S0E$1""] = ""{SeriesShortHandle} S0E$1 - $2"",";
-            return Regex.Replace(input, pattern, replacementPattern, RegexOptions.Multiline);
-        }
-
-        private string ToTwoDigitEpisodeNumber(string input)
-        {
-            string pattern = @"S0E(\d)(?!\d)";
-            string replacementPattern = @"S0E0$1";
-            return Regex.Replace(input, pattern, replacementPattern);
-        }
-
-        private string DeleteInvalidFilenameCharacters(string input)
-        {
-            string pattern = @"[:?<>*|…]";
-            string replacementPattern = String.Empty;
-            return Regex.Replace(input, pattern, replacementPattern);
-        }
-
-        private string InsertSeasonNumbers(string input)
-        {
-            StringBuilder result = new StringBuilder();
-            int season = 1;
-            string line;
-            using (TextReader reader = new StringReader(input))
-                while ((line = reader.ReadLine()) != null)
-                {
-                    if (line == String.Empty)
-                        season += 1;
-                    else
-                        result.AppendLine(insert(line, season));
-                }
-            return result.ToString();
-
-            string insert(string l, int s)
+            Func<string, string> parse;
+            switch (Mode)
             {
-                if (s > 99) throw new ArgumentException();
-                string pattern = @"S0(E\d{2})";
-                string replacementPattern = $@"S{season:00}$1";
-                return Regex.Replace(l, pattern, replacementPattern);
+                case ParsingMode.Wikipedia: parse = ParseWikipedia; break;
+                case ParsingMode.TheTVDB: parse = ParseTheTVDB; break;
+                case ParsingMode.Debug: parse = ParseDebug; break;
+                default: throw new NotImplementedException();
             }
+            Output = parse(Input);
+        }
+
+        private string ParseWikipedia(string input)
+        {
+            return input
+                .CleanWikipediaInput()
+                .MakeWikipediaDictionary(SeriesShortHandle)
+                .PadSeasonOrEpisodeNumber()
+                .DeleteInvalidFilenameCharacters()
+                .InsertSeasonNumbers();
+        }
+
+        private string ParseTheTVDB(string input)
+        {
+            return input
+                .MakeTheTVDBDictionary(SeriesShortHandle)
+                .PadSeasonOrEpisodeNumber()
+                .DeleteInvalidFilenameCharacters();
+        }
+
+        private string ParseDebug(string input)
+        {
+            return input
+                .PadSeasonOrEpisodeNumber();
         }
 
         public class RelayCommand : ICommand

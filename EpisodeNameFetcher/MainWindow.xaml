@@ -4,8 +4,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:EpisodeNameFetcher"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         Title="MainWindow" Height="800" Width="1700">
+    <Window.Resources>
+        <local:EnumBooleanConverter x:Key="EBConverter"/>
+    </Window.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -18,22 +23,43 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="auto"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <!-- series short handle input field-->
         <TextBox
             Grid.Row="1" Grid.Column="1"
             Text="{Binding Path=SeriesShortHandle, UpdateSourceTrigger=PropertyChanged}"
             />
 
+        <!-- convert button-->
         <Button
             Grid.Row="3" Grid.Column="1"
             Command="{Binding Path=Convert}"
             Content="Convert"
             />
 
+        <!-- input text box-->
         <TextBox
-            Grid.Row="0" Grid.RowSpan="5" Grid.Column="0"
+            Grid.Row="0" Grid.RowSpan="123" Grid.Column="0"
             TextWrapping="NoWrap"
             AcceptsReturn="True"
             AcceptsTab="True"
@@ -43,8 +69,9 @@
             Height="auto"
             />
 
+        <!-- output text box-->
         <TextBox
-            Grid.Row="0" Grid.RowSpan="5" Grid.Column="4"
+            Grid.Row="0" Grid.RowSpan="123" Grid.Column="2"
             TextWrapping="NoWrap"
             AcceptsReturn="True"
             AcceptsTab="True"
@@ -52,6 +79,24 @@
             VerticalScrollBarVisibility="Auto"
             Text="{Binding Path=Output, UpdateSourceTrigger=PropertyChanged}"
             Height="auto"
+            />
+
+        <RadioButton
+            Grid.Row="5" Grid.Column="1"
+            IsChecked="{Binding Path=Mode, Converter={StaticResource ResourceKey=EBConverter}, ConverterParameter={x:Static local:ParsingMode.Wikipedia}}"
+            Content="Wikipedia"
+            />
+
+        <RadioButton
+            Grid.Row="7" Grid.Column="1"
+            IsChecked="{Binding Path=Mode, Converter={StaticResource ResourceKey=EBConverter}, ConverterParameter={x:Static local:ParsingMode.TheTVDB}}"
+            Content="TheTVDB.com"
+            />
+
+        <RadioButton
+            Grid.Row="9" Grid.Column="1"
+            IsChecked="{Binding Path=Mode, Converter={StaticResource ResourceKey=EBConverter}, ConverterParameter={x:Static local:ParsingMode.Debug}}"
+            Content="debug"
             />
     </Grid>
 </Window>
