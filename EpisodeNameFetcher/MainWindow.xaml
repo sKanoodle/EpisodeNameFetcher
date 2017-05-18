@@ -48,6 +48,7 @@
         <TextBox
             Grid.Row="1" Grid.Column="1"
             Text="{Binding Path=SeriesShortHandle, UpdateSourceTrigger=PropertyChanged}"
+            IsEnabled="{Binding Path=SeriesShortHandleEnabled}"
             />
 
         <!-- convert button-->
@@ -81,6 +82,7 @@
             Height="auto"
             />
 
+        <!-- radiobuttons with selection of parsing mode-->
         <RadioButton
             Grid.Row="5" Grid.Column="1"
             IsChecked="{Binding Path=Mode, Converter={StaticResource ResourceKey=EBConverter}, ConverterParameter={x:Static local:ParsingMode.Wikipedia}}"
@@ -95,6 +97,12 @@
 
         <RadioButton
             Grid.Row="9" Grid.Column="1"
+            IsChecked="{Binding Path=Mode, Converter={StaticResource ResourceKey=EBConverter}, ConverterParameter={x:Static local:ParsingMode.MovieTitle}}"
+            Content="Movie"
+            />
+
+        <RadioButton
+            Grid.Row="11" Grid.Column="1"
             IsChecked="{Binding Path=Mode, Converter={StaticResource ResourceKey=EBConverter}, ConverterParameter={x:Static local:ParsingMode.Debug}}"
             Content="debug"
             />

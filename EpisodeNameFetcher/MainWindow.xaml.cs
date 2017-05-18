@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -47,6 +48,16 @@ namespace EpisodeNameFetcher
             }
         }
 
+        public bool SeriesShortHandleEnabled
+        {
+            get
+            {
+                if ((ParsingMode.MovieTitle | ParsingMode.Debug).HasFlag(Mode))
+                    return false;
+                return true;
+            }
+        }
+
         private string _Output;
         public string Output
         {
@@ -59,7 +70,7 @@ namespace EpisodeNameFetcher
             }
         }
 
-        private ParsingMode _Mode;
+        private ParsingMode _Mode = ParsingMode.Wikipedia;
         public ParsingMode Mode
         {
             get => _Mode;
@@ -68,6 +79,7 @@ namespace EpisodeNameFetcher
                 if (_Mode == value) return;
                 _Mode = value;
                 OnPropertyChanged(nameof(Mode));
+                OnPropertyChanged(nameof(SeriesShortHandleEnabled));
             }
         }
 
@@ -102,7 +114,7 @@ namespace EpisodeNameFetcher
             {
                 if (String.IsNullOrWhiteSpace(Input))
                     return false;
-                if (Mode == ParsingMode.Debug)
+                if ((ParsingMode.Debug | ParsingMode.MovieTitle).HasFlag(Mode))
                     return true;
                 if (String.IsNullOrWhiteSpace(SeriesShortHandle))
                     return false;
@@ -117,6 +129,7 @@ namespace EpisodeNameFetcher
             {
                 case ParsingMode.Wikipedia: parse = ParseWikipedia; break;
                 case ParsingMode.TheTVDB: parse = ParseTheTVDB; break;
+                case ParsingMode.MovieTitle: parse = ParseMovie; break;
                 case ParsingMode.Debug: parse = ParseDebug; break;
                 default: throw new NotImplementedException();
             }
@@ -139,6 +152,17 @@ namespace EpisodeNameFetcher
                 .MakeTheTVDBDictionary(SeriesShortHandle)
                 .PadSeasonOrEpisodeNumber()
                 .DeleteInvalidFilenameCharacters();
+        }
+
+        private string ParseMovie(string input)
+        {
+            string pattern = @"^{""Title"":""([^""]+)"",""Year"":""([^""]+).*$";
+            string replacement = "$2 $1";
+
+            WebRequest request = WebRequest.Create($"http://www.omdbapi.com/?t={input}");
+            using (Stream stream = request.GetResponse().GetResponseStream())
+            using (StreamReader reader = new StreamReader(stream))
+                return Regex.Replace(reader.ReadToEnd(), pattern, replacement).DeleteInvalidFilenameCharacters();
         }
 
         private string ParseDebug(string input)
