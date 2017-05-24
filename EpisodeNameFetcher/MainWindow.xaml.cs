@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EpisodeNameFetcher.TheTVDBApi;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -15,7 +16,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace EpisodeNameFetcher
 {
@@ -24,6 +24,15 @@ namespace EpisodeNameFetcher
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        private string Directory
+        {
+            get
+            {
+                Uri baseUri = new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase);
+                return WebUtility.UrlDecode(Path.GetDirectoryName(baseUri.AbsolutePath));
+            }
+        }
+
         private string _SeriesShortHandle;
         public string SeriesShortHandle
         {
@@ -167,8 +176,17 @@ namespace EpisodeNameFetcher
 
         private string ParseDebug(string input)
         {
-            return input
-                .PadSeasonOrEpisodeNumber();
+            StringBuilder result = new StringBuilder();
+            TheTVDBApiClient client = new TheTVDBApiClient("https://api.thetvdb.com", File.ReadAllText(Path.Combine(Directory, "TheTVDB.apikey")));
+            var shows = client.SearchShow(input);
+            if (shows.Length == 1)
+                foreach (var e in client.Episodes(shows[0].ID).OrderBy(e => e.AbsoluteNumber).ThenBy(e => e.AiredSeason).ThenBy(e => e.AiredEpisodeNumber))
+                    //result.AppendFormat("[\"S{0:00}E{1:00}\"] = \"{3} S{0:00}E{1:00} - {2}\",\n", e.AiredSeason, e.AiredEpisodeNumber, e.EpisodeName, input);
+                    result.AppendFormat("{3} S{0:00}E{1:00}A{4:000} - {2}\n", e.AiredSeason, e.AiredEpisodeNumber, e.EpisodeName, shows[0].SeriesName, e.AbsoluteNumber);
+            else
+                foreach (var s in shows)
+                    result.AppendFormat("{0,-50}{1,-20}{2,-20}{3}\n", s.SeriesName, s.Status, s.Network, String.Join(", ", s.Aliases));
+            return result.ToString();
         }
 
         public class RelayCommand : ICommand

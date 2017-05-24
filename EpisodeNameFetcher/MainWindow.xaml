@@ -73,6 +73,7 @@
         <!-- output text box-->
         <TextBox
             Grid.Row="0" Grid.RowSpan="123" Grid.Column="2"
+            FontFamily="Courier New"
             TextWrapping="NoWrap"
             AcceptsReturn="True"
             AcceptsTab="True"
